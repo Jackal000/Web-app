@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="{{ theme }}" data-table-density="{{ table_density }}" data-show-ip="{{ show_ip }}" data-rows-per-page="{{ rows_per_page | default(20) }}">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}UserLog Dashboard{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body class="{% if hl_err %}hl-err{% endif %} {% if hl_warn %}hl-warn{% endif %} {% if hl_succ %}hl-succ{% endif %}">
+    <div class="d-flex" id="wrapper">
+        <div class="bg-dark text-white" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4 fs-4 fw-bold border-bottom"><i class="bi bi-shield-lock-fill me-2"></i>UserLog</div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="{{ url_for('main.dashboard') }}" class="list-group-item list-group-item-action bg-transparent text-white-50 p-3 {% if request.endpoint == 'main.dashboard' %}active-menu text-white{% endif %}"><i class="bi bi-speedometer2 me-2"></i> Дашборд</a>
+                
+                {% if current_role == 'admin' %}
+                <a href="{{ url_for('main.users') }}" class="list-group-item list-group-item-action bg-transparent text-white-50 p-3 {% if request.endpoint == 'main.users' %}active-menu text-white{% endif %}"><i class="bi bi-people me-2"></i> Пользователи</a>
+                {% endif %}
+
+                {% if current_role in ['admin', 'operator'] %}
+                <a href="{{ url_for('main.settings') }}" class="list-group-item list-group-item-action bg-transparent text-white-50 p-3 {% if request.endpoint == 'main.settings' %}active-menu text-white{% endif %}"><i class="bi bi-gear me-2"></i> Настройки</a>
+                {% endif %}
+                
+                <a href="{{ url_for('main.logout') }}" class="list-group-item list-group-item-action bg-transparent logout-btn p-3 mt-2"><i class="bi bi-box-arrow-right me-2"></i> Выйти</a>
+            </div>
+        </div>
+        <div id="page-content-wrapper" class="w-100">
+            <div class="container-fluid p-4 bg-body-tertiary min-vh-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0">👋 Добро пожаловать, {{ session.get('full_name', 'Пользователь') }}</h5>
+                    <span class="badge bg-{{ 'primary' if current_role=='admin' else 'success' if current_role=='operator' else 'secondary' }} px-2 py-1">{{ current_role | upper }}</span>
+                </div>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}{% for cat, msg in messages %}<div class="alert alert-{{ cat }} alert-dismissible fade show mb-3">{{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>{% endfor %}{% endif %}
+                {% endwith %}
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="logModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content" id="logModalContent"></div></div></div>
+    
+    <script type="application/json" id="app-config-data">
+    {{ {
+        "autoRefresh": auto_refresh | default(false),
+        "refreshInterval": refresh_interval | default(0),
+        "soundAlert": enable_sound_alert | default(false),
+        "browserNotify": enable_browser_notify | default(false),
+        "errorCount": error_count | default(0),
+        "theme": theme | default('light'),
+        "tableDensity": table_density | default('normal'),
+        "showIp": show_ip | default('true')
+    } | tojson }}
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

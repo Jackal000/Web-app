@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col"><h2 class="fw-bold text-body">Обзор активности</h2><p class="text-muted">Мониторинг действий пользователей в реальном времени</p></div>
+</div>
+
+<!-- Карточки статистики -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4"><div class="card border-0 shadow-sm p-3 h-100 interactive-card" data-filter="all" style="cursor:pointer"><div class="d-flex justify-content-between align-items-center"><div><p class="text-muted mb-1 small">Всего событий</p><h3 class="fw-bold mb-0 text-primary">{{ total_logs }}</h3></div><div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary"><i class="bi bi-activity fs-4"></i></div></div></div></div>
+    <div class="col-md-4"><div class="card border-0 shadow-sm p-3 h-100 interactive-card" data-filter="success" style="cursor:pointer"><div class="d-flex justify-content-between align-items-center"><div><p class="text-muted mb-1 small">Активных сегодня</p><h3 class="fw-bold mb-0 text-success">{{ active_users }}</h3></div><div class="bg-success bg-opacity-10 p-3 rounded-circle text-success"><i class="bi bi-people fs-4"></i></div></div></div></div>
+    <div class="col-md-4"><div class="card border-0 shadow-sm p-3 h-100 interactive-card {% if error_count >= error_threshold %}card-alert-threshold{% endif %}" data-filter="error" style="cursor:pointer"><div class="d-flex justify-content-between align-items-center"><div><p class="text-muted mb-1 small">Критических ошибок</p><h3 class="fw-bold mb-0 text-danger">{{ error_count }}</h3></div><div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger"><i class="bi bi-exclamation-triangle fs-4"></i></div></div></div></div>
+</div>
+
+<!-- Графики -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-3">
+            <h6 class="fw-bold mb-3">📊 Распределение действий</h6>
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="chartTypes"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm p-3">
+            <h6 class="fw-bold mb-3">📈 Активность за 7 дней</h6>
+            <div style="position: relative; height: 300px; width: 100%;">
+                <canvas id="chartTimeline"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица логов -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-body-secondary py-3 border-0 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">🕒 Последние действия</h5>
+        <a href="{{ url_for('main.export_logs') }}" class="btn btn-sm btn-outline-success"><i class="bi bi-download me-1"></i> Экспорт CSV</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0" id="logsTable">
+            <thead class="bg-body-secondary"><tr><th class="ps-4">Время</th><th>Пользователь</th><th>Действие</th><th class="col-ip th-ip">IP</th><th class="col-role th-role">Статус</th></tr></thead>
+            <tbody id="logsBody">
+                {% for log in logs %}
+                <tr data-log-id="{{ log.id }}" style="cursor:pointer">
+                    <td class="ps-4 text-muted">{{ log.timestamp | msk }}</td>
+                    <td>{{ log.user.username }}</td><td>{{ log.description }}</td>
+                    <td class="col-ip"><code>{{ log.ip_address }}</code></td>
+                    <td class="col-role">
+                        {% if 'ERROR' in log.action_type or 'DENIED' in log.action_type %}<span class="badge bg-danger rounded-pill">Ошибка</span>
+                        {% elif 'WARN' in log.action_type %}<span class="badge bg-warning text-dark rounded-pill">Внимание</span>
+                        {% else %}<span class="badge bg-success rounded-pill">Успешно</span>{% endif %}
+                    </td>
+                </tr>{% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Пагинация -->
+{% if pagination.pages > 1 %}
+<nav class="mt-4 d-flex justify-content-center">
+    <ul class="pagination">
+        <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}"><a class="page-link" href="{{ url_for('main.dashboard', page=pagination.prev_num) if pagination.has_prev else '#' }}">«</a></li>
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}"><a class="page-link" href="{{ url_for('main.dashboard', page=page_num) }}">{{ page_num }}</a></li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if not pagination.has_next %}disabled{% endif %}"><a class="page-link" href="{{ url_for('main.dashboard', page=pagination.next_num) if pagination.has_next else '#' }}">»</a></li>
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Передача данных в JavaScript -->
+<script>
+    window.CHART_TYPES = { labels: {{ chart_types_labels | tojson }}, data: {{ chart_types_data | tojson }} };
+    window.CHART_TIMELINE = { labels: {{ chart_dates | tojson }}, data: {{ chart_dates_data | tojson }} };
+</script>
+{% endblock %}

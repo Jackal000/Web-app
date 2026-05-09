@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-4"><h2 class="fw-bold text-body">⚙️ Настройки системы</h2><p class="text-muted">Управление интерфейсом, данными и мониторингом</p></div>
+<form method="POST" class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3"><h5 class="fw-bold mb-3">📊 Система</h5><div id="sysInfo" class="small text-muted">Загрузка...</div></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
+                <h5 class="fw-bold mb-3">🎨 Интерфейс</h5>
+                <div class="mb-2"><label class="form-label small">Плотность таблицы</label>
+                    <select class="form-select form-select-sm" name="table_density">
+                        <option value="normal" {% if table_density=='normal' %}selected{% endif %}>Обычная</option>
+                        <option value="compact" {% if table_density=='compact' %}selected{% endif %}>Компактная</option>
+                    </select>
+                </div>
+                <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="show_ip" value="true" {% if show_ip=='true' %}checked{% endif %}><label class="form-check-label small">Показывать IP</label></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
+                <h5 class="fw-bold mb-3">🔔 Подсветка логов</h5>
+                <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" name="highlight_errors" value="true" {% if hl_err %}checked{% endif %}><label class="form-check-label small">Ошибки (красный)</label></div>
+                <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" name="highlight_warnings" value="true" {% if hl_warn %}checked{% endif %}><label class="form-check-label small">Предупреждения (желтый)</label></div>
+                <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="highlight_success" value="true" {% if hl_succ %}checked{% endif %}><label class="form-check-label small">Успешные (зеленый)</label></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
+                <h5 class="fw-bold mb-3">📐 Отображение и мониторинг</h5>
+                <div class="mb-2"><label class="form-label small">Строк в таблице</label>
+                    <select class="form-select form-select-sm" name="rows_per_page">
+                        <option value="10" {% if rows_per_page==10 %}selected{% endif %}>10</option>
+                        <option value="20" {% if rows_per_page==20 %}selected{% endif %}>20</option>
+                        <option value="50" {% if rows_per_page==50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if rows_per_page==100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+                <div class="mb-2"><label class="form-label small">Интервал обновления</label>
+                    <select class="form-select form-select-sm" name="refresh_interval">
+                        <option value="10" {% if refresh_interval==10 %}selected{% endif %}>10 сек</option>
+                        <option value="30" {% if refresh_interval==30 %}selected{% endif %}>30 сек</option>
+                        <option value="60" {% if refresh_interval==60 %}selected{% endif %}>60 сек</option>
+                    </select>
+                </div>
+                <div class="mb-2"><label class="form-label small">Порог ошибок (карточка)</label>
+                    <input type="number" class="form-control form-control-sm" name="error_threshold" value="{{ error_threshold }}" min="1">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
+                <h5 class="fw-bold mb-3">🗄️ Управление БД</h5>
+                <div class="small text-muted mb-2">📦 Размер: <b>{{ db_size }}</b> | 📝 Записей: <b>{{ total_rows }}</b></div>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('main.backup_db') }}" class="btn btn-sm btn-outline-primary">📥 Скачать резервную копию</a>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="if(confirm('Оптимизировать базу?')) window.location.href='/api/optimize_db'">🧹 Оптимизировать</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body p-3">
+                <h5 class="fw-bold mb-3">🔊 Оповещения</h5>
+                <div class="form-check form-switch mb-1"><input class="form-check-input" type="checkbox" name="enable_sound_alert" value="true" {% if enable_sound_alert %}checked{% endif %}><label class="form-check-label small">Звук при новых ошибках</label></div>
+                <div class="form-check form-switch mb-2"><input class="form-check-input" type="checkbox" name="enable_browser_notify" value="true" {% if enable_browser_notify %}checked{% endif %}><label class="form-check-label small">Push-уведомления браузера</label></div>
+                <div class="small text-muted mt-2">Работает локально. Браузер запросит разрешение при первом включении.</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-3 d-flex flex-wrap gap-2 align-items-center">
+                <div class="me-auto"><label class="form-label small mb-0">Тема</label>
+                    <select class="form-select form-select-sm d-inline-block w-auto ms-2" name="theme">
+                        <option value="light" {% if theme=='light' %}selected{% endif %}>Светлая</option>
+                        <option value="dark" {% if theme=='dark' %}selected{% endif %}>Тёмная</option>
+                    </select>
+                </div>
+                <div><label class="form-label small mb-0">Автообновление</label>
+                    <select class="form-select form-select-sm d-inline-block w-auto ms-2" name="auto_refresh">
+                        <option value="false" {% if not auto_refresh %}selected{% endif %}>Выкл</option>
+                        <option value="true" {% if auto_refresh %}selected{% endif %}>Вкл</option>
+                    </select>
+                </div>
+                <div><label class="form-label small mb-0">Хранить (дней)</label><input type="number" class="form-control form-control-sm d-inline-block w-auto ms-2" name="retention_days" value="{{ retention }}" min="1"></div>
+                <button type="submit" class="btn btn-primary ms-3">💾 Сохранить</button>
+                <a href="{{ url_for('main.api_export_config') }}" class="btn btn-outline-secondary">📤 Экспорт</a>
+                <button type="button" class="btn btn-outline-warning" onclick="if(confirm('Сбросить настройки?')) fetch('/api/reset_config', {method:'POST'}).then(()=>location.reload())">🔄 Сброс</button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
